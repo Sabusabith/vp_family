@@ -9,7 +9,8 @@ import 'package:vp_family/view/fam_tree/fam_tree.dart';
 import 'package:vp_family/view/home/controller/home_controller.dart';
 import 'package:vp_family/view/home/home.dart';
 import 'package:vp_family/view/person/add_person/add_person.dart' hide primary;
-import 'package:vp_family/view/person/edit_person/edit_person.dart';
+import 'package:vp_family/view/person/edit_person/edit_person.dart'
+    hide primary;
 import 'package:vp_family/view/person/member_profile_screen.dart';
 import 'package:vp_family/view/profile/profile.dart';
 import 'package:vp_family/view/settings/settings.dart';

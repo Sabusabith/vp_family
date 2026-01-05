@@ -22,6 +22,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
   final _name = TextEditingController();
   final _age = TextEditingController();
   final _place = TextEditingController();
+  final _whatsapp = TextEditingController(); // Add this
 
   Person? father;
   Person? mother;
@@ -54,6 +55,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
           _field(_name, 'Name'),
           _field(_age, 'Age', isNumber: true),
           _field(_place, 'Place'),
+          _field(_whatsapp, 'WhatsApp Number', isNumber: true),
 
           const SizedBox(height: 20),
 
@@ -332,6 +334,8 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
       name: _name.text.trim(),
       age: int.tryParse(_age.text) ?? 0,
       place: _place.text.trim(),
+      whatsappNumber: _whatsapp.text.trim(), // ← new
+
       fatherId: father?.id,
       motherId: mother?.id,
       spouseId: spouse?.id,

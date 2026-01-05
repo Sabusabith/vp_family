@@ -246,21 +246,34 @@ class MemberProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.cake, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(
-                '${member.age} years',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-              ),
-              const SizedBox(width: 16),
+              if (member.age != 0) ...[
+                const Icon(Icons.cake, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  '${member.age} years',
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                ),
+                const SizedBox(width: 16),
+              ],
               Icon(Icons.location_on, size: 16, color: Colors.grey),
               const SizedBox(width: 4),
               Text(
                 member.place,
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
               ),
+              if (member.whatsappNumber != null &&
+                  member.whatsappNumber!.isNotEmpty) ...[
+                const SizedBox(width: 16),
+                Icon(Icons.phone, size: 16, color: Colors.green),
+                const SizedBox(width: 4),
+                Text(
+                  member.whatsappNumber!,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                ),
+              ],
             ],
           ),
+
           const SizedBox(height: 16),
         ],
       ),

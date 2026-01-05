@@ -7,6 +7,7 @@ class Person {
   final String? motherId;
   final String? spouseId;
   final String photoUrl;
+  final String? whatsappNumber; // ← new field
 
   Person({
     this.id,
@@ -17,6 +18,7 @@ class Person {
     this.motherId,
     this.spouseId,
     required this.photoUrl,
+    this.whatsappNumber,
   });
 
   factory Person.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class Person {
       motherId: json['mother_id'],
       spouseId: json['spouse_id'],
       photoUrl: json['photo_url'] ?? '',
+      whatsappNumber: json['whatsapp_number'], // ← new field
     );
   }
 
@@ -41,6 +44,7 @@ class Person {
       'mother_id': motherId,
       'spouse_id': spouseId,
       'photo_url': photoUrl,
+      'whatsapp_number': whatsappNumber, // ← new field
     };
   }
 }
