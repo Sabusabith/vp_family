@@ -79,8 +79,8 @@ class LoginScreen extends StatelessWidget {
                   children: [
                     _customTextField(
                       controller: controller.emailcontroller,
-                      hint: 'Email',
-                      icon: Icons.email,
+                      hint: 'User Name',
+                      icon: Icons.person,
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),

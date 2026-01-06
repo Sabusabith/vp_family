@@ -4,7 +4,7 @@
     <!-- Read images (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <application
-        android:label="vp_family"
+        android:label="VP Family"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

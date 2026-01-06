@@ -22,7 +22,7 @@ class LoginController extends GetxController {
 
     await Future.delayed(const Duration(seconds: 2)); // simulate network call
 
-    if (emailcontroller.text == 'user' && passcontroller.text == '123') {
+    if (emailcontroller.text == 'vphome' && passcontroller.text == '1212') {
       // Save login status
       await saveObject('login', true);
 
