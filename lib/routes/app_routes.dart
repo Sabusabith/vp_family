@@ -4,6 +4,8 @@ import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/get_navigation/src/root/parse_route.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vp_family/utils/common/app_colors.dart';
+import 'package:vp_family/view/allpersons/allpersons.dart';
+import 'package:vp_family/view/auth/login.dart';
 import 'package:vp_family/view/bottomnav/bottomnav_scaffold.dart';
 import 'package:vp_family/view/fam_tree/fam_tree.dart';
 import 'package:vp_family/view/home/controller/home_controller.dart';
@@ -27,6 +29,8 @@ class AppRoutes {
         builder: (context, state) => const SplashScreen(),
       ),
 
+      GoRoute(path: '/login', builder: (context, state) => LoginScreen()),
+
       /// MAIN SHELL (Bottom Navigation)
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -41,8 +45,8 @@ class AppRoutes {
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Profile',
+                  icon: Icon(Icons.group_add_sharp),
+                  label: 'All Members',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.settings),
@@ -112,8 +116,8 @@ class AppRoutes {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/profile',
-                builder: (context, state) => const ProfileScreen(),
+                path: '/allpersons',
+                builder: (context, state) => AllMembersScreen(),
               ),
             ],
           ),

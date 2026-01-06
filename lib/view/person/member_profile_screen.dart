@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
@@ -43,7 +44,7 @@ class MemberProfileScreen extends StatelessWidget {
             onLongPressEnd: (_) => _cancelForceDeleteTimer(),
             child: const Padding(
               padding: EdgeInsets.all(12),
-              child: Icon(Icons.delete_outline),
+              child: Icon(CupertinoIcons.delete),
             ),
           ),
         ],
@@ -92,54 +93,115 @@ class MemberProfileScreen extends StatelessWidget {
     );
   }
 
-  //delete .............................................
   void _confirmDelete(BuildContext context) {
     final c = Get.find<HomeController>();
-    final pageContext = context; // ✅ SAFE context
+    final pageContext = context; // ✅ Safe context
 
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Member'),
-        content: const Text(
-          'This member will be removed from the family tree.\n'
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: secondary),
-            onPressed: () async {
-              Navigator.pop(ctx); // close dialog
+      barrierDismissible: true, // allow tap outside to dismiss
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 10,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ⚠️ Icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_forever,
+                  color: Colors.red,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 16),
 
-              try {
-                await SupabaseService.safeDeleteMember(member.id!);
+              // Title
+              const Text(
+                'Delete Member?',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
 
-                c.members.removeWhere((p) => p.id == member.id);
-                c.update();
+              // Description
+              const Text(
+                'This member will be removed from the family tree.\n'
+                'This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 24),
 
-                pageContext.pop(); // go back
-              } catch (e) {
-                print(e);
-                // ✅ SAFE snackbar
-                ScaffoldMessenger.of(pageContext).showSnackBar(
-                  SnackBar(
-                    backgroundColor: secondaryLight,
-                    content: Text(
-                      e.toString().replaceFirst('Exception: ', ''),
-                      style: const TextStyle(color: textPrimary),
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey.shade400),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.black87),
+                      ),
                     ),
                   ),
-                );
-              }
-            },
-            child: const Text('Delete'),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 3,
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(ctx); // close dialog
+
+                        try {
+                          await SupabaseService.safeDeleteMember(member.id!);
+
+                          c.members.removeWhere((p) => p.id == member.id);
+                          c.update();
+
+                          pageContext.pop(); // go back
+                        } catch (e) {
+                          ScaffoldMessenger.of(pageContext).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red.shade300,
+                              content: Text(
+                                e.toString().replaceFirst('Exception: ', ''),
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
