@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vp_family/core/model/person_model.dart';
 import 'package:vp_family/core/services/supabase_services.dart';
@@ -53,7 +55,19 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
     return Scaffold(
       backgroundColor: scaffoldBackground,
       appBar: AppBar(
-        title: const Text('Edit Member'),
+        leading: GestureDetector(
+          onTap: () {
+            context.pop();
+          },
+          child: Icon(CupertinoIcons.back, color: Colors.white, size: 22),
+        ),
+        title: Text(
+          'Edit Member',
+          style: GoogleFonts.phudu(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
+        ),
         backgroundColor: primary,
         elevation: 0,
         centerTitle: true,

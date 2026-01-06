@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:vp_family/core/model/person_model.dart';
+import 'package:vp_family/utils/common/app_colors.dart';
 import 'package:vp_family/view/fam_tree/widget/tree_line.dart';
 import 'package:vp_family/view/home/controller/home_controller.dart';
 
@@ -25,111 +28,166 @@ class FamilyTreeScreen extends StatelessWidget {
         .where((p) => p.fatherId == member.id || p.motherId == member.id)
         .toList();
 
-    double nodeWidth = 80;
-    double nodeSpacing = 32;
+    const double nodeWidth = 80.0;
+    const double nodeSpacing = 32.0;
+    const double lineHeight = 90.0;
 
-    double parentsRowWidth = parents.isEmpty
-        ? 0
+    final int coupleCount = spouse == null ? 1 : 2;
+
+    final double parentsRowWidth = parents.isEmpty
+        ? 0.0
         : parents.length * nodeWidth + (parents.length - 1) * nodeSpacing;
-    double childrenRowWidth = children.isEmpty
-        ? 0
+
+    final double coupleRowWidth =
+        coupleCount * nodeWidth + (coupleCount - 1) * nodeSpacing;
+
+    final double childrenRowWidth = children.isEmpty
+        ? 0.0
         : children.length * nodeWidth + (children.length - 1) * nodeSpacing;
 
+    final double maxWidth = [
+      parentsRowWidth,
+      coupleRowWidth,
+      childrenRowWidth,
+    ].reduce((a, b) => a > b ? a : b);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Family Tree')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            /// PARENTS ROW
-            if (parents.isNotEmpty)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (int i = 0; i < parents.length; i++) ...[
-                    _node(context, parents[i]),
-                    if (i != parents.length - 1) SizedBox(width: nodeSpacing),
-                  ],
-                ],
-              ),
-
-            /// PARENTS → MEMBER LINES
-            if (parents.isNotEmpty)
-              CustomPaint(
-                size: Size(parentsRowWidth, 80),
-                painter: TreeLinePainter(
-                  parentCount: parents.length,
-                  drawParentToMember: true,
-                  nodeWidth: nodeWidth,
-                  nodeSpacing: nodeSpacing,
-                ),
-              ),
-
-            /// MEMBER + SPOUSE
-            Row(
+      appBar: AppBar(
+        leading: GestureDetector(
+          onTap: () {
+            context.pop();
+          },
+          child: Icon(CupertinoIcons.back, color: Colors.white, size: 22),
+        ),
+        title: Text(
+          'Family Tree',
+          style: GoogleFonts.phudu(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+      body: InteractiveViewer(
+        boundaryMargin: const EdgeInsets.all(500),
+        minScale: 0.5,
+        maxScale: 3.5,
+        constrained: false,
+        child: Center(
+          child: SizedBox(
+            width: maxWidth,
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _node(context, member, isMain: true),
-                if (spouse != null) ...[
-                  SizedBox(width: nodeSpacing),
-                  _node(context, spouse),
-                ],
+                /// ---------------- PARENTS ----------------
+                if (parents.isNotEmpty)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 0; i < parents.length; i++) ...[
+                        _node(context, parents[i]),
+                        if (i != parents.length - 1)
+                          const SizedBox(width: nodeSpacing),
+                      ],
+                    ],
+                  ),
+
+                /// -------- PARENTS → COUPLE LINES --------
+                if (parents.isNotEmpty)
+                  CustomPaint(
+                    size: Size(maxWidth, lineHeight),
+                    painter: TreeLinePainter(
+                      parentCount: parents.length,
+                      drawParentToMember: true,
+                      nodeWidth: nodeWidth,
+                      nodeSpacing: nodeSpacing,
+                    ),
+                  ),
+
+                /// --------------- COUPLE ----------------
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _node(context, member, isMain: true),
+                    if (spouse != null) ...[
+                      const SizedBox(width: nodeSpacing),
+                      _node(context, spouse),
+                    ],
+                  ],
+                ),
+
+                /// ------------ MARRIAGE LINE -------------
+                if (spouse != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Container(
+                      width: nodeSpacing,
+                      height: 2,
+                      color: Colors.green,
+                    ),
+                  ),
+
+                /// -------- COUPLE → CHILDREN LINES -------
+                if (children.isNotEmpty)
+                  CustomPaint(
+                    size: Size(maxWidth, lineHeight),
+                    painter: TreeLinePainter(
+                      childCount: children.length,
+                      drawMemberToChildren: true,
+                      nodeWidth: nodeWidth,
+                      nodeSpacing: nodeSpacing,
+                    ),
+                  ),
+
+                /// ---------------- CHILDREN ---------------
+                if (children.isNotEmpty)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 0; i < children.length; i++) ...[
+                        _node(context, children[i]),
+                        if (i != children.length - 1)
+                          const SizedBox(width: nodeSpacing),
+                      ],
+                    ],
+                  ),
               ],
             ),
-
-            /// MEMBER → CHILDREN LINES
-            if (children.isNotEmpty)
-              CustomPaint(
-                size: Size(childrenRowWidth, 80),
-                painter: TreeLinePainter(
-                  childCount: children.length,
-                  drawMemberToChildren: true,
-                  nodeWidth: nodeWidth,
-                  nodeSpacing: nodeSpacing,
-                ),
-              ),
-
-            /// CHILDREN
-            if (children.isNotEmpty)
-              Wrap(
-                alignment: WrapAlignment.start,
-                spacing: nodeSpacing,
-                runSpacing: 24,
-                children: children
-                    .map((child) => _node(context, child))
-                    .toList(),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  /// ---------- NODE ----------
+  /// ---------------- NODE ----------------
   Widget _node(BuildContext context, Person person, {bool isMain = false}) {
     return GestureDetector(
       onTap: () => context.push('/home/member/${person.id}'),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: isMain ? 34 : 26,
-            backgroundColor: Colors.grey.shade300,
-            backgroundImage: person.photoUrl.isNotEmpty
-                ? NetworkImage(person.photoUrl)
-                : null,
-            child: person.photoUrl.isEmpty
-                ? Text(
-                    person.name[0].toUpperCase(),
-                    style: TextStyle(
-                      fontSize: isMain ? 24 : 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  )
-                : null,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: primary),
+            ),
+            child: CircleAvatar(
+              radius: isMain ? 36 : 26,
+              backgroundColor: isMain
+                  ? Colors.green.shade400
+                  : Colors.grey.shade300,
+              backgroundImage: person.photoUrl.isNotEmpty
+                  ? NetworkImage(person.photoUrl)
+                  : null,
+              child: person.photoUrl.isEmpty
+                  ? Text(
+                      person.name[0].toUpperCase(),
+                      style: TextStyle(
+                        fontSize: isMain ? 24 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    )
+                  : null,
+            ),
           ),
           const SizedBox(height: 6),
           SizedBox(
@@ -137,11 +195,11 @@ class FamilyTreeScreen extends StatelessWidget {
             child: Text(
               person.name,
               textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: isMain ? 14 : 12,
                 fontWeight: isMain ? FontWeight.w600 : FontWeight.normal,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

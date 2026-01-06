@@ -10,6 +10,7 @@ void main() async {
     url: 'https://htjhwwyrlhnfcstjywxp.supabase.co',
     anonKey: 'sb_publishable_aX1ffS0sLlwgbcByl2N0PA_Couzim9D',
   );
+
   runApp(const MyApp());
 }
 

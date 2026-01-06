@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:vp_family/core/model/person_model.dart';
 import 'package:vp_family/core/services/supabase_services.dart';
 import 'package:vp_family/utils/common/app_colors.dart';
@@ -29,7 +30,19 @@ class MemberProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
-        title: const Text('Profile'),
+        leading: GestureDetector(
+          onTap: () {
+            context.pop();
+          },
+          child: Icon(CupertinoIcons.back, color: Colors.white, size: 22),
+        ),
+        title: Text(
+          'Profile',
+          style: GoogleFonts.phudu(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.5,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: primary,
@@ -298,6 +311,7 @@ class MemberProfileScreen extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
+          SizedBox(height: 10),
           // NAME
           Text(
             member.name,
@@ -309,7 +323,7 @@ class MemberProfileScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (member.age != 0) ...[
-                const Icon(Icons.cake, size: 16, color: Colors.grey),
+                const Icon(Icons.cake, size: 16, color: primary),
                 const SizedBox(width: 4),
                 Text(
                   '${member.age} years',
@@ -317,7 +331,7 @@ class MemberProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
               ],
-              Icon(Icons.location_on, size: 16, color: Colors.grey),
+              Icon(Icons.location_on, size: 16, color: primary),
               const SizedBox(width: 4),
               Text(
                 member.place,
@@ -378,6 +392,7 @@ class MemberProfileScreen extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
+          border: Border.all(color: primaryDark),
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -400,7 +415,11 @@ class MemberProfileScreen extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   person.name,
@@ -435,7 +454,11 @@ class MemberProfileScreen extends StatelessWidget {
               child.name,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
+              style: GoogleFonts.publicSans(
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.5,
+                fontSize: 12,
+              ),
             ),
           ),
         ],

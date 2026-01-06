@@ -22,78 +22,68 @@ class TreeLinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = primary
-      ..strokeWidth = 1.8
-      ..style = PaintingStyle.stroke;
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
 
     final centerX = size.width / 2;
 
-    // -------- Parents → Member --------
+    /// ===============================
+    /// PARENTS → MEMBER (ORG STYLE)
+    /// ===============================
     if (drawParentToMember && parentCount > 0) {
-      final topY = 0.0;
-      final horizontalY = size.height * 0.3;
-      final memberY = size.height * 0.7;
+      final parentBottomY = 0.0;
+      final jointY = size.height / 2;
+      final memberTopY = size.height;
 
-      // Horizontal line connecting all parents
-      double parentsTotalWidth =
+      // Center vertical spine
+      canvas.drawLine(
+        Offset(centerX, memberTopY),
+        Offset(centerX, jointY),
+        paint,
+      );
+
+      // Horizontal bus
+      final totalWidth =
           parentCount * nodeWidth + (parentCount - 1) * nodeSpacing;
-      final startX = centerX - parentsTotalWidth / 2 + nodeWidth / 2;
-      final endX = centerX + parentsTotalWidth / 2 - nodeWidth / 2;
-      canvas.drawLine(
-        Offset(startX, horizontalY),
-        Offset(endX, horizontalY),
-        paint,
-      );
+      final startX = centerX - totalWidth / 2 + nodeWidth / 2;
+      final endX = centerX + totalWidth / 2 - nodeWidth / 2;
 
-      // Vertical lines from each parent to horizontal line
+      canvas.drawLine(Offset(startX, jointY), Offset(endX, jointY), paint);
+
+      // Vertical drops to parents
       for (int i = 0; i < parentCount; i++) {
-        double x = startX + i * (nodeWidth + nodeSpacing);
-        canvas.drawLine(
-          Offset(x, topY + nodeWidth / 2),
-          Offset(x, horizontalY),
-          paint,
-        );
+        final x = startX + i * (nodeWidth + nodeSpacing);
+        canvas.drawLine(Offset(x, jointY), Offset(x, parentBottomY), paint);
       }
-
-      // Vertical line from horizontal line to member
-      canvas.drawLine(
-        Offset(centerX, horizontalY),
-        Offset(centerX, memberY),
-        paint,
-      );
     }
 
-    // -------- Member → Children --------
+    /// ===============================
+    /// MEMBER → CHILDREN (ORG STYLE)
+    /// ===============================
     if (drawMemberToChildren && childCount > 0) {
-      final topY = 0.0;
-      final horizontalY = size.height * 0.3;
+      final memberBottomY = 0.0;
+      final jointY = size.height / 2;
+      final childTopY = size.height;
 
-      double childrenTotalWidth =
+      // Center vertical spine
+      canvas.drawLine(
+        Offset(centerX, memberBottomY),
+        Offset(centerX, jointY),
+        paint,
+      );
+
+      // Horizontal bus
+      final totalWidth =
           childCount * nodeWidth + (childCount - 1) * nodeSpacing;
-      final startX = centerX - childrenTotalWidth / 2 + nodeWidth / 2;
-      final endX = centerX + childrenTotalWidth / 2 - nodeWidth / 2;
+      final startX = centerX - totalWidth / 2 + nodeWidth / 2;
+      final endX = centerX + totalWidth / 2 - nodeWidth / 2;
 
-      // Vertical line from member to horizontal line
-      canvas.drawLine(
-        Offset(centerX, topY),
-        Offset(centerX, horizontalY),
-        paint,
-      );
+      canvas.drawLine(Offset(startX, jointY), Offset(endX, jointY), paint);
 
-      // Horizontal line connecting children
-      canvas.drawLine(
-        Offset(startX, horizontalY),
-        Offset(endX, horizontalY),
-        paint,
-      );
-
-      // Vertical line from horizontal line to each child
+      // Vertical drops to children
       for (int i = 0; i < childCount; i++) {
-        double x = startX + i * (nodeWidth + nodeSpacing);
-        canvas.drawLine(
-          Offset(x, horizontalY),
-          Offset(x, horizontalY + nodeWidth / 2),
-          paint,
-        );
+        final x = startX + i * (nodeWidth + nodeSpacing);
+        canvas.drawLine(Offset(x, jointY), Offset(x, childTopY), paint);
       }
     }
   }

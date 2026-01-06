@@ -15,6 +15,8 @@ import 'package:vp_family/view/person/edit_person/edit_person.dart'
     hide primary;
 import 'package:vp_family/view/person/member_profile_screen.dart';
 import 'package:vp_family/view/profile/profile.dart';
+import 'package:vp_family/view/settings/infopage.dart';
+import 'package:vp_family/view/settings/meets.dart';
 import 'package:vp_family/view/settings/settings.dart';
 import 'package:vp_family/view/splash/splash.dart';
 
@@ -37,7 +39,7 @@ class AppRoutes {
           return Scaffold(
             body: BottomnavScaffold(navigationShell: navigationShell),
             bottomNavigationBar: BottomNavigationBar(
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: Colors.grey.shade300,
               selectedItemColor: primary,
               selectedIconTheme: IconThemeData(color: primary),
               currentIndex: navigationShell.currentIndex,
@@ -128,6 +130,23 @@ class AppRoutes {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'meets',
+                    builder: (context, state) => const MeetsScreen(),
+                  ),
+
+                  GoRoute(
+                    path: 'info',
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>;
+                      return InfoPage(
+                        title: extra['title'],
+                        content: extra['content'],
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
