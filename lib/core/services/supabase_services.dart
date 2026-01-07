@@ -7,7 +7,11 @@ class SupabaseService {
 
   /// FETCH MEMBERS (exclude soft-deleted)
   static Future<List<Person>> fetchMembers() async {
-    final res = await _client.from('persons').select().eq('is_deleted', false);
+    final res = await _client
+        .from('persons')
+        .select()
+        .eq('is_deleted', false)
+        .order('created_at', ascending: true); // 👈 FIRST ADDED FIRST
 
     return (res as List).map((e) => Person.fromJson(e)).toList();
   }

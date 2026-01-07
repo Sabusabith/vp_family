@@ -223,7 +223,7 @@ class MemberProfileScreen extends StatelessWidget {
   void _startForceDeleteTimer(BuildContext context) {
     _forceDeleteTimer?.cancel();
 
-    _forceDeleteTimer = Timer(const Duration(seconds: 8), () {
+    _forceDeleteTimer = Timer(const Duration(seconds: 5), () {
       _showForceDeleteDialog(context);
     });
   }
@@ -289,7 +289,6 @@ class MemberProfileScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: primary),
-        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -304,13 +303,32 @@ class MemberProfileScreen extends StatelessWidget {
           // PROFILE IMAGE
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Image.network(
-              member.photoUrl,
-              height: 200,
+            child: SizedBox(
+              height: 360, // header height (adjust as needed)
               width: double.infinity,
-              fit: BoxFit.cover,
+              child: Image.network(
+                member.photoUrl,
+                fit: BoxFit.cover, // 🔥 key for professional look
+                alignment: Alignment.topCenter,
+
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey.shade200,
+                    child: const Icon(
+                      Icons.person,
+                      size: 80,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
+
           SizedBox(height: 10),
           // NAME
           Text(

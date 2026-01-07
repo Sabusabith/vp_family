@@ -16,12 +16,13 @@ class HomeController extends GetxController {
     fetchMembers();
   }
 
-  /// 🏠 Members shown on Home
-  /// - Normal → first 6 added
+  /// 🏠 HOME → ONLY FIRST 13 ADDED
+  /// 🏠 HOME MEMBERS
+  /// - Normal → first 13 added
   /// - Searching → ALL matching members
   List<Person> get homeMembers {
-    // 🔍 SEARCH MODE
-    if (isSearching.value && searchQuery.isNotEmpty) {
+    // 🔍 SEARCH MODE → search ALL members
+    if (isSearching.value && searchQuery.value.isNotEmpty) {
       return members
           .where(
             (p) =>
@@ -30,9 +31,12 @@ class HomeController extends GetxController {
           .toList();
     }
 
-    // 🏠 NORMAL MODE
-    return members.length > 6 ? members.take(6).toList() : members.toList();
+    // 🏠 NORMAL MODE → FIRST 13 ONLY
+    return members.length > 13 ? members.take(13).toList() : members.toList();
   }
+
+  /// 👥 ALL MEMBERS
+  List<Person> get allMembers => members;
 
   /// Start search mode
   void startSearch() {

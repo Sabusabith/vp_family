@@ -26,6 +26,16 @@ class AllMembersScreen extends StatelessWidget {
             letterSpacing: 1.5,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.account_tree),
+            tooltip: 'Family Tree',
+            onPressed: () {
+              // Navigate to family tree screen
+              context.push('/allpersons/allfamily-tree');
+            },
+          ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -36,6 +46,7 @@ class AllMembersScreen extends StatelessWidget {
           ),
         ),
       ),
+
       body: Obx(() {
         if (controller.loading.value) {
           return const Center(child: CircularProgressIndicator(color: primary));

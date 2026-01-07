@@ -4,6 +4,7 @@ import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/get_navigation/src/root/parse_route.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vp_family/utils/common/app_colors.dart';
+import 'package:vp_family/view/allpersons/allfamilytree.dart';
 import 'package:vp_family/view/allpersons/allpersons.dart';
 import 'package:vp_family/view/auth/login.dart';
 import 'package:vp_family/view/bottomnav/bottomnav_scaffold.dart';
@@ -64,7 +65,7 @@ class AppRoutes {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => HomeScreen(),
                 routes: [
                   GoRoute(
                     path: 'add', // /home/add
@@ -120,6 +121,12 @@ class AppRoutes {
               GoRoute(
                 path: '/allpersons',
                 builder: (context, state) => AllMembersScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'allfamily-tree',
+                    builder: (context, state) => const AllFamilyTreeScreen(),
+                  ),
+                ],
               ),
             ],
           ),
