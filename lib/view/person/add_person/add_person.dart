@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -24,12 +27,14 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
   final _name = TextEditingController();
   final _age = TextEditingController();
   final _place = TextEditingController();
-  final _whatsapp = TextEditingController(); // Add this
+  final _whatsapp = TextEditingController();
 
   Person? father;
   Person? mother;
   Person? spouse;
 
+  /// Image handling
+  Uint8List? webImage;
   File? image;
   final picker = ImagePicker();
 
@@ -41,10 +46,8 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
       backgroundColor: scaffoldBackground,
       appBar: AppBar(
         leading: GestureDetector(
-          onTap: () {
-            context.pop();
-          },
-          child: Icon(CupertinoIcons.back, color: Colors.white, size: 22),
+          onTap: () => context.pop(),
+          child: const Icon(CupertinoIcons.back, color: Colors.white),
         ),
         title: Text(
           'Add Member',
@@ -54,18 +57,15 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
           ),
         ),
         backgroundColor: primary,
-        elevation: 0,
         centerTitle: true,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          /// Profile Image
           _imagePicker(),
-
           const SizedBox(height: 24),
 
-          /// Input Fields
           _field(_name, 'Name'),
           _field(_age, 'Age', isNumber: true),
           _field(_place, 'Place'),
@@ -73,12 +73,11 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
 
           const SizedBox(height: 20),
 
-          /// Dropdowns
           _dropdown(
             controller.members,
             'Father',
             (v) => setState(() => father = v),
-            father, // ← selected value
+            father,
           ),
           _dropdown(
             controller.members,
@@ -95,7 +94,6 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
 
           const SizedBox(height: 28),
 
-          /// Save Button
           ElevatedButton(
             onPressed: () => save(controller, context),
             style: ElevatedButton.styleFrom(
@@ -120,8 +118,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
     );
   }
 
-  /// ---------------- Widgets ----------------
-
+  /// ---------------- IMAGE PICKER ----------------
   Widget _imagePicker() {
     return GestureDetector(
       onTap: pickImage,
@@ -142,7 +139,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(4), // border thickness
+                padding: const EdgeInsets.all(4),
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
@@ -159,9 +156,14 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
                             image: FileImage(image!),
                             fit: BoxFit.cover,
                           )
+                        : webImage != null
+                        ? DecorationImage(
+                            image: MemoryImage(webImage!),
+                            fit: BoxFit.cover,
+                          )
                         : null,
                   ),
-                  child: image == null
+                  child: image == null && webImage == null
                       ? const Center(
                           child: Icon(
                             Icons.person,
@@ -193,6 +195,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
     );
   }
 
+  /// ---------------- TEXT FIELD ----------------
   Widget _field(
     TextEditingController c,
     String label, {
@@ -205,7 +208,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
         keyboardType: isNumber ? TextInputType.number : null,
         style: const TextStyle(fontSize: 16, color: Colors.black87),
         decoration: InputDecoration(
-          hint: Text(label, style: TextStyle(color: Colors.grey.shade600)),
+          hintText: label,
           filled: true,
           fillColor: Colors.grey.shade100,
           contentPadding: const EdgeInsets.symmetric(
@@ -225,6 +228,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
     );
   }
 
+  /// ---------------- DROPDOWN ----------------
   Widget _dropdown(
     List<Person> list,
     String label,
@@ -250,40 +254,33 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
               ),
             ),
             value: selectedValue,
-            items: list
-                .map(
-                  (p) => DropdownMenuItem<Person>(
-                    value: p,
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(p.photoUrl),
-                          backgroundColor: Colors.grey.shade200,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          p.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
+            items: list.map((p) {
+              return DropdownMenuItem(
+                value: p,
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundImage: NetworkImage(p.photoUrl),
+                      backgroundColor: Colors.grey.shade200,
                     ),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) => onChanged(value),
-            iconStyleData: IconStyleData(
-              icon: Padding(
-                padding: const EdgeInsets.only(right: 15),
-                child: Icon(Icons.arrow_drop_down),
-              ),
+                    const SizedBox(width: 10),
+                    Text(
+                      p.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            onChanged: onChanged,
+            iconStyleData: const IconStyleData(
+              icon: Icon(Icons.arrow_drop_down),
             ),
-            focusNode: FocusNode(),
             style: const TextStyle(fontSize: 16, color: Colors.black87),
-            // Dropdown menu style
             dropdownStyleData: DropdownStyleData(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -292,8 +289,6 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
               ),
               elevation: 4,
             ),
-
-            // Search inside dropdown
             dropdownSearchData: DropdownSearchData(
               searchController: TextEditingController(),
               searchInnerWidgetHeight: 80,
@@ -319,11 +314,9 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
                   ),
                 ),
               ),
-              searchMatchFn: (item, searchValue) {
-                return (item.value!.name.toLowerCase().contains(
-                  searchValue.toLowerCase(),
-                ));
-              },
+              searchMatchFn: (item, searchValue) => item.value!.name
+                  .toLowerCase()
+                  .contains(searchValue.toLowerCase()),
             ),
           ),
         ),
@@ -331,16 +324,27 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
     );
   }
 
-  void pickImage() async {
+  /// ---------------- PICK IMAGE ----------------
+  Future<void> pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => image = File(picked.path));
+    if (picked == null) return;
+
+    if (kIsWeb) {
+      webImage = await picked.readAsBytes();
+    } else {
+      image = File(picked.path);
+    }
+    setState(() {});
   }
 
+  /// ---------------- SAVE MEMBER ----------------
   Future<void> save(HomeController controller, BuildContext context) async {
     String photoUrl =
         'https://ui-avatars.com/api/?name=${_name.text}&background=4CAF50&color=fff';
 
-    if (image != null) {
+    if (kIsWeb && webImage != null) {
+      photoUrl = await SupabaseService.uploadImageBytes(webImage!);
+    } else if (!kIsWeb && image != null) {
       photoUrl = await SupabaseService.uploadImage(image!);
     }
 
@@ -348,8 +352,7 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
       name: _name.text.trim(),
       age: int.tryParse(_age.text) ?? 0,
       place: _place.text.trim(),
-      whatsappNumber: _whatsapp.text.trim(), // ← new
-
+      whatsappNumber: _whatsapp.text.trim(),
       fatherId: father?.id,
       motherId: mother?.id,
       spouseId: spouse?.id,
@@ -358,7 +361,6 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
 
     final created = await controller.addMember(person);
 
-    // Auto spouse linking
     if (spouse != null && spouse!.id != null) {
       await SupabaseService.updateSpouse(
         personId: created.id!,

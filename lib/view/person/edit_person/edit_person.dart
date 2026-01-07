@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -32,6 +35,7 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
   Person? spouse;
 
   File? image;
+  Uint8List? webImage;
   final picker = ImagePicker();
 
   @override
@@ -56,10 +60,8 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
       backgroundColor: scaffoldBackground,
       appBar: AppBar(
         leading: GestureDetector(
-          onTap: () {
-            context.pop();
-          },
-          child: Icon(CupertinoIcons.back, color: Colors.white, size: 22),
+          onTap: () => context.pop(),
+          child: const Icon(CupertinoIcons.back, color: Colors.white, size: 22),
         ),
         title: Text(
           'Edit Member',
@@ -75,12 +77,10 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          /// Profile Image
           _imagePicker(),
 
           const SizedBox(height: 24),
 
-          /// Input Fields
           _field(name, 'Name'),
           _field(age, 'Age', isNumber: true),
           _field(place, 'Place'),
@@ -88,7 +88,6 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
 
           const SizedBox(height: 20),
 
-          /// Dropdowns
           _dropdown(
             c.members,
             'Father',
@@ -110,7 +109,6 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
 
           const SizedBox(height: 28),
 
-          /// Save Button
           ElevatedButton(
             onPressed: () => save(c, context),
             style: ElevatedButton.styleFrom(
@@ -143,7 +141,6 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
         child: Stack(
           alignment: Alignment.bottomRight,
           children: [
-            // Outer border
             Container(
               width: 160,
               height: 160,
@@ -156,7 +153,7 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(4), // border thickness
+                padding: const EdgeInsets.all(4),
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
@@ -173,6 +170,11 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                             image: FileImage(image!),
                             fit: BoxFit.cover,
                           )
+                        : webImage != null
+                        ? DecorationImage(
+                            image: MemoryImage(webImage!),
+                            fit: BoxFit.cover,
+                          )
                         : widget.member.photoUrl.isNotEmpty
                         ? DecorationImage(
                             image: NetworkImage(widget.member.photoUrl),
@@ -180,7 +182,10 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                           )
                         : null,
                   ),
-                  child: image == null && widget.member.photoUrl.isEmpty
+                  child:
+                      image == null &&
+                          webImage == null &&
+                          widget.member.photoUrl.isEmpty
                       ? const Center(
                           child: Icon(
                             Icons.person,
@@ -192,7 +197,6 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                 ),
               ),
             ),
-            // Camera icon
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -296,7 +300,7 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
                   ),
                 )
                 .toList(),
-            onChanged: (value) => onChanged(value),
+            onChanged: onChanged,
             iconStyleData: const IconStyleData(
               icon: Icon(Icons.arrow_drop_down),
             ),
@@ -348,13 +352,23 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
   /// ---------- IMAGE PICK ----------
   void pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => image = File(picked.path));
+    if (picked != null) {
+      if (kIsWeb) {
+        webImage = await picked.readAsBytes();
+      } else {
+        image = File(picked.path);
+      }
+      setState(() {});
+    }
   }
 
   /// ---------- SAVE MEMBER ----------
   Future<void> save(HomeController c, BuildContext context) async {
     String photoUrl = widget.member.photoUrl;
-    if (image != null) {
+
+    if (kIsWeb && webImage != null) {
+      photoUrl = await SupabaseService.uploadImageBytes(webImage!);
+    } else if (!kIsWeb && image != null) {
       photoUrl = await SupabaseService.uploadImage(image!);
     }
 
@@ -362,15 +376,13 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
       'name': name.text.trim(),
       'age': int.tryParse(age.text) ?? 0,
       'place': place.text.trim(),
-      'whatsapp_number': _whatsapp.text.trim(), // ← new
-
+      'whatsapp_number': _whatsapp.text.trim(),
       'father_id': father?.id,
       'mother_id': mother?.id,
       'spouse_id': spouse?.id,
       'photo_url': photoUrl,
     });
 
-    /// AUTO SPOUSE LINK
     if (spouse != null) {
       await SupabaseService.updateSpouse(
         spouseId: spouse!.id!,

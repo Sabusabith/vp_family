@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../model/person_model.dart';
 
@@ -11,7 +13,7 @@ class SupabaseService {
         .from('persons')
         .select()
         .eq('is_deleted', false)
-        .order('created_at', ascending: true); // 👈 FIRST ADDED FIRST
+        .order('created_at', ascending: true);
 
     return (res as List).map((e) => Person.fromJson(e)).toList();
   }
@@ -38,8 +40,29 @@ class SupabaseService {
         .eq('id', spouseId);
   }
 
-  /// IMAGE UPLOAD
-  /// 🔴 Make sure bucket exists: avatars (PUBLIC)
+  // ==========================================================
+  // IMAGE UPLOAD (WEB + MOBILE SAFE)
+  // ==========================================================
+
+  /// Upload image using BYTES
+  /// 🔴 Bucket must exist: avatars (PUBLIC)
+  static Future<String> uploadImageBytes(
+    Uint8List bytes, {
+    String extension = 'png',
+  }) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
+
+    await _client.storage
+        .from('avatars')
+        .uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: const FileOptions(upsert: false, cacheControl: '3600'),
+        );
+
+    return _client.storage.from('avatars').getPublicUrl(fileName);
+  }
+
   static Future<String> uploadImage(File file) async {
     final fileName =
         '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
@@ -49,6 +72,7 @@ class SupabaseService {
     return _client.storage.from('avatars').getPublicUrl(fileName);
   }
 
+  /// UPDATE MEMBER
   static Future<Person> updateMember(
     String id,
     Map<String, dynamic> data,
@@ -63,11 +87,10 @@ class SupabaseService {
     return Person.fromJson(res);
   }
 
+  /// SAFE DELETE (SOFT DELETE)
   static Future<void> safeDeleteMember(String memberId) async {
-    final client = Supabase.instance.client;
-
     // 1️⃣ Check if member has children
-    final children = await client
+    final children = await _client
         .from('persons')
         .select('id')
         .or('father_id.eq.$memberId,mother_id.eq.$memberId');
@@ -77,24 +100,22 @@ class SupabaseService {
     }
 
     // 2️⃣ Auto-unlink spouse
-    await client
+    await _client
         .from('persons')
         .update({'spouse_id': null})
         .eq('spouse_id', memberId);
 
     // 3️⃣ Soft delete
-    await client
+    await _client
         .from('persons')
         .update({'is_deleted': true})
         .eq('id', memberId);
   }
 
-  //force delete
+  /// FORCE DELETE (ADMIN)
   static Future<void> forceDeleteMember(String memberId) async {
-    final client = Supabase.instance.client;
-
     // 1️⃣ Remove parent reference from children
-    await client
+    await _client
         .from('persons')
         .update({'father_id': null, 'mother_id': null})
         .or(
@@ -103,13 +124,13 @@ class SupabaseService {
         );
 
     // 2️⃣ Unlink spouse
-    await client
+    await _client
         .from('persons')
         .update({'spouse_id': null})
         .eq('spouse_id', memberId);
 
     // 3️⃣ Soft delete member
-    await client
+    await _client
         .from('persons')
         .update({'is_deleted': true})
         .eq('id', memberId);
