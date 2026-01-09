@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:image_cropper/image_cropper.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,7 +26,7 @@ class AddPersonScreen extends StatefulWidget {
 
 class _AddPersonScreenState extends State<AddPersonScreen> {
   final _name = TextEditingController();
-  final _age = TextEditingController();
+  final _age = TextEditingController(); // will show calculated age
   final _place = TextEditingController();
   final _whatsapp = TextEditingController();
 
@@ -37,6 +38,32 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
   Uint8List? webImage;
   File? image;
   final picker = ImagePicker();
+
+  DateTime? birthDate;
+
+  @override
+  void initState() {
+    super.initState();
+    if (birthDate != null) _updateAge();
+  }
+
+  /// Calculate age dynamically from birthDate
+  int _calculateAge(DateTime birthDate) {
+    final now = DateTime.now();
+    int age = now.year - birthDate.year;
+    if (now.month < birthDate.month ||
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  /// Update age field from birthDate
+  void _updateAge() {
+    if (birthDate != null) {
+      _age.text = _calculateAge(birthDate!).toString();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +94,42 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
           const SizedBox(height: 24),
 
           _field(_name, 'Name'),
-          _field(_age, 'Age', isNumber: true),
+
+          /// --------- Date of Birth Picker ---------
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: GestureDetector(
+              onTap: pickDateOfBirth,
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: _age, // shows calculated age
+                  readOnly: true,
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                  decoration: InputDecoration(
+                    hintText: 'Date of Birth',
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 20,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade400,
+                        width: 1.2,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: primary, width: 2),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           _field(_place, 'Place'),
           _field(_whatsapp, 'WhatsApp Number', isNumber: true),
 
@@ -126,7 +188,6 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
         child: Stack(
           alignment: Alignment.bottomRight,
           children: [
-            // Outer border
             Container(
               width: 160,
               height: 160,
@@ -175,7 +236,6 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
                 ),
               ),
             ),
-            // Camera icon
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -324,16 +384,79 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
     );
   }
 
+  /// ---------------- DATE PICKER ----------------
+  Future<void> pickDateOfBirth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: birthDate ?? DateTime(now.year - 20),
+      firstDate: DateTime(now.year - 100),
+      lastDate: now,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: primary,
+            colorScheme: ColorScheme.light(primary: primary),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      birthDate = picked;
+      _updateAge();
+      setState(() {});
+    }
+  }
+
   /// ---------------- PICK IMAGE ----------------
   Future<void> pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
 
     if (kIsWeb) {
-      webImage = await picked.readAsBytes();
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        uiSettings: [
+          WebUiSettings(
+            context: context,
+            presentStyle: WebPresentStyle.dialog,
+            viewwMode: WebViewMode.mode_1,
+            dragMode: WebDragMode.crop,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            modal: true,
+          ),
+        ],
+      );
+
+      if (cropped == null) return;
+
+      webImage = await cropped.readAsBytes();
+      image = null;
     } else {
-      image = File(picked.path);
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: primary,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
+        ],
+      );
+
+      if (cropped == null) return;
+
+      image = File(cropped.path);
+      webImage = null;
     }
+
     setState(() {});
   }
 
@@ -350,7 +473,9 @@ class _AddPersonScreenState extends State<AddPersonScreen> {
 
     final person = Person(
       name: _name.text.trim(),
-      age: int.tryParse(_age.text) ?? 0,
+      age: birthDate != null
+          ? _calculateAge(birthDate!)
+          : int.tryParse(_age.text) ?? 0,
       place: _place.text.trim(),
       whatsappNumber: _whatsapp.text.trim(),
       fatherId: father?.id,

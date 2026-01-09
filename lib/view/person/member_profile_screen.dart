@@ -23,9 +23,12 @@ class MemberProfileScreen extends StatelessWidget {
     final mother = c.members.firstWhereOrNull((p) => p.id == member.motherId);
     final spouse = c.members.firstWhereOrNull((p) => p.id == member.spouseId);
 
-    final children = c.members
-        .where((p) => p.fatherId == member.id || p.motherId == member.id)
-        .toList();
+    // Children sorted by age (oldest first)
+    final children =
+        c.members
+            .where((p) => p.fatherId == member.id || p.motherId == member.id)
+            .toList()
+          ..sort((a, b) => b.age.compareTo(a.age));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
@@ -98,7 +101,7 @@ class MemberProfileScreen extends StatelessWidget {
               spacing: 18,
               runSpacing: 18,
               children: children
-                  .map((child) => _childAvatar(context, child))
+                  .map((child) => _childAvatarWithAge(context, child))
                   .toList(),
             ),
         ],
@@ -108,11 +111,11 @@ class MemberProfileScreen extends StatelessWidget {
 
   void _confirmDelete(BuildContext context) {
     final c = Get.find<HomeController>();
-    final pageContext = context; // ✅ Safe context
+    final pageContext = context;
 
     showDialog(
       context: context,
-      barrierDismissible: true, // allow tap outside to dismiss
+      barrierDismissible: true,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 10,
@@ -121,7 +124,6 @@ class MemberProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ⚠️ Icon
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -135,15 +137,11 @@ class MemberProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Title
               const Text(
                 'Delete Member?',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-
-              // Description
               const Text(
                 'This member will be removed from the family tree.\n'
                 'This action cannot be undone.',
@@ -151,8 +149,6 @@ class MemberProfileScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.black54),
               ),
               const SizedBox(height: 24),
-
-              // Buttons
               Row(
                 children: [
                   Expanded(
@@ -183,15 +179,14 @@ class MemberProfileScreen extends StatelessWidget {
                         elevation: 3,
                       ),
                       onPressed: () async {
-                        Navigator.pop(ctx); // close dialog
-
+                        Navigator.pop(ctx);
                         try {
                           await SupabaseService.safeDeleteMember(member.id!);
 
                           c.members.removeWhere((p) => p.id == member.id);
                           c.update();
 
-                          pageContext.pop(); // go back
+                          pageContext.pop();
                         } catch (e) {
                           ScaffoldMessenger.of(pageContext).showSnackBar(
                             SnackBar(
@@ -219,7 +214,6 @@ class MemberProfileScreen extends StatelessWidget {
     );
   }
 
-  //force delete...................................
   void _startForceDeleteTimer(BuildContext context) {
     _forceDeleteTimer?.cancel();
 
@@ -300,17 +294,15 @@ class MemberProfileScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // PROFILE IMAGE
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: SizedBox(
-              height: 360, // header height (adjust as needed)
+              height: 360,
               width: double.infinity,
               child: Image.network(
                 member.photoUrl,
-                fit: BoxFit.cover, // 🔥 key for professional look
+                fit: BoxFit.cover,
                 alignment: Alignment.topCenter,
-
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return const Center(child: CircularProgressIndicator());
@@ -328,15 +320,12 @@ class MemberProfileScreen extends StatelessWidget {
               ),
             ),
           ),
-
-          SizedBox(height: 10),
-          // NAME
+          const SizedBox(height: 10),
           Text(
             member.name,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          // AGE AND PLACE
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -367,7 +356,6 @@ class MemberProfileScreen extends StatelessWidget {
               ],
             ],
           ),
-
           const SizedBox(height: 16),
         ],
       ),
@@ -420,14 +408,12 @@ class MemberProfileScreen extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // IMAGE
             CircleAvatar(
               radius: 20,
               backgroundColor: Colors.grey.shade200,
               backgroundImage: NetworkImage(person.photoUrl),
             ),
             const SizedBox(width: 10),
-            // LABEL + NAME
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -454,7 +440,8 @@ class MemberProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _childAvatar(BuildContext context, Person child) {
+  // Child avatar with age displayed
+  Widget _childAvatarWithAge(BuildContext context, Person child) {
     return GestureDetector(
       onTap: () => context.push('/home/member/${child.id}'),
       child: Column(
@@ -479,6 +466,15 @@ class MemberProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+          // if (child.age != 0)
+          //   SizedBox(
+          //     width: 72,
+          //     child: Text(
+          //       '${child.age} yrs',
+          //       textAlign: TextAlign.center,
+          //       style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          //     ),
+          //   ),
         ],
       ),
     );

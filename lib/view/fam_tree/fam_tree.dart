@@ -24,9 +24,11 @@ class FamilyTreeScreen extends StatelessWidget {
 
     final spouse = c.members.firstWhereOrNull((p) => p.id == member.spouseId);
 
-    final children = c.members
-        .where((p) => p.fatherId == member.id || p.motherId == member.id)
-        .toList();
+    final children =
+        c.members
+            .where((p) => p.fatherId == member.id || p.motherId == member.id)
+            .toList()
+          ..sort((a, b) => b.age.compareTo(a.age)); // OLDEST → YOUNGEST
 
     const double nodeWidth = 80.0;
     const double nodeSpacing = 32.0;

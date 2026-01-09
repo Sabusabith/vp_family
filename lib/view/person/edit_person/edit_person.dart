@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:vp_family/core/model/person_model.dart';
 import 'package:vp_family/core/services/supabase_services.dart';
@@ -38,18 +39,43 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
   Uint8List? webImage;
   final picker = ImagePicker();
 
+  DateTime? tempBirthDate; // Temporary DOB for age calculation
+
   @override
   void initState() {
     super.initState();
     name = TextEditingController(text: widget.member.name);
-    age = TextEditingController(text: widget.member.age.toString());
     place = TextEditingController(text: widget.member.place);
     _whatsapp = TextEditingController(text: widget.member.whatsappNumber ?? '');
+
+    // Approximate temporary birthDate from stored age
+    tempBirthDate = DateTime(DateTime.now().year - widget.member.age, 1, 1);
+
+    // Initialize age controller
+    age = TextEditingController(text: widget.member.age.toString());
 
     final c = Get.find<HomeController>();
     father = c.members.firstWhereOrNull((p) => p.id == widget.member.fatherId);
     mother = c.members.firstWhereOrNull((p) => p.id == widget.member.motherId);
     spouse = c.members.firstWhereOrNull((p) => p.id == widget.member.spouseId);
+  }
+
+  // Calculate age from DateTime
+  int _calculateAge(DateTime dob) {
+    final now = DateTime.now();
+    return now.year -
+        dob.year -
+        ((now.month < dob.month ||
+                (now.month == dob.month && now.day < dob.day))
+            ? 1
+            : 0);
+  }
+
+  // Update age field when DOB changes
+  void _updateAgeField() {
+    if (tempBirthDate != null) {
+      age.text = _calculateAge(tempBirthDate!).toString();
+    }
   }
 
   @override
@@ -78,11 +104,44 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           _imagePicker(),
-
           const SizedBox(height: 24),
-
           _field(name, 'Name'),
-          _field(age, 'Age', isNumber: true),
+
+          /// ---------- DATE PICKER FOR DOB ----------
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: GestureDetector(
+              onTap: pickDateOfBirth,
+              child: AbsorbPointer(
+                child: TextField(
+                  controller: age,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    hintText: 'Age (tap to pick DOB)',
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 20,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                        color: Colors.grey.shade400,
+                        width: 1.2,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: primary, width: 2),
+                    ),
+                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.black87),
+                ),
+              ),
+            ),
+          ),
+
           _field(place, 'Place'),
           _field(_whatsapp, 'WhatsApp Number', isNumber: true),
 
@@ -349,17 +408,80 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
     );
   }
 
-  /// ---------- IMAGE PICK ----------
-  void pickImage() async {
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+  /// ---------- DATE PICKER ----------
+  Future<void> pickDateOfBirth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: tempBirthDate ?? DateTime(now.year - 20),
+      firstDate: DateTime(now.year - 100),
+      lastDate: now,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: primary,
+            colorScheme: ColorScheme.light(primary: primary),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+
     if (picked != null) {
-      if (kIsWeb) {
-        webImage = await picked.readAsBytes();
-      } else {
-        image = File(picked.path);
-      }
+      tempBirthDate = picked;
+      _updateAgeField();
       setState(() {});
     }
+  }
+
+  /// ---------- IMAGE PICK ----------
+  Future<void> pickImage() async {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    if (kIsWeb) {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        uiSettings: [
+          WebUiSettings(
+            context: context,
+            presentStyle: WebPresentStyle.dialog,
+            viewwMode: WebViewMode.mode_1,
+            dragMode: WebDragMode.crop,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            modal: true,
+          ),
+        ],
+      );
+
+      if (cropped == null) return;
+
+      webImage = await cropped.readAsBytes();
+      image = null;
+    } else {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Image',
+            toolbarColor: primary,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
+        ],
+      );
+
+      if (cropped == null) return;
+
+      image = File(cropped.path);
+      webImage = null;
+    }
+
+    setState(() {});
   }
 
   /// ---------- SAVE MEMBER ----------
@@ -372,9 +494,10 @@ class _EditMemberScreenState extends State<EditMemberScreen> {
       photoUrl = await SupabaseService.uploadImage(image!);
     }
 
+    // Save only age (existing DB) — no DOB change in DB
     final updated = await SupabaseService.updateMember(widget.member.id!, {
       'name': name.text.trim(),
-      'age': int.tryParse(age.text) ?? 0,
+      'age': int.tryParse(age.text) ?? widget.member.age,
       'place': place.text.trim(),
       'whatsapp_number': _whatsapp.text.trim(),
       'father_id': father?.id,
